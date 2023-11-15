@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <title>Weather App</title>
+    <script>
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(sendPosition, showError);
+            } else {
+                console.log("このブラウザではGeolocationがサポートされていません.");
+            }
+        }
+
+        function sendPosition(position) {
+            fetch('/location', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateWeatherInfo(data);
+            });
+        }
+
+        function showError(error) {
+            console.log(`Geolocation error: ${error.message}`);
+            fetch('/ip_weather')
+            .then(response => response.json())
+            .then(data => {
+                updateWeatherInfo(data);
+            });
+        }
+
+
+        function updateWeatherInfo(data) {
+            document.getElementById('location').textContent = `${data.name} の天気情報`;
+            document.getElementById('temperature').textContent = `${(data.main.temp- 273.15).toFixed(1)} °C`;
+            document.getElementById('feels_like').textContent = `${(data.main.feels_like - 273.15).toFixed(1)} °C`;
+            document.getElementById('humidity').textContent = `${data.main.humidity}%`;
+            document.getElementById('pressure').textContent = `${data.main.pressure} hPa`;
+            document.getElementById('clouds').textContent = `${data.clouds.all}%`;
+            document.getElementById('weather_main').textContent = data.weather[0].main;
+            document.getElementById('weather_description').textContent = data.weather[0].description;
+            document.getElementById('wind_speed').textContent = `${data.wind.speed} m/s`;
+            document.getElementById('wind_deg').textContent = `${data.wind.deg} 度`;
+            if (data.rain) {
+                document.getElementById('rain').style.display = 'block';
+                document.getElementById('rain_amount').textContent = `${data.rain['1h']} mm`;
+            } else {
+                document.getElementById('rain').style.display = 'none';
+            }
+        }
+    </script>
+</head>
+<body onload="getLocation()">
+    <h1 id="location">{{ location }} の天気情報</h1>
+    <p><strong>気温:</strong> <span id="temperature">{{ weather.temp|round(1) }} °C</span></p>
+    <p><strong>体感温度:</strong> <span id="feels_like">{{ weather.feels_like|round(1) }} °C</span></p>
+    <p><strong>湿度:</strong> <span id="humidity">{{ weather.humidity }}%</span></p>
+    <p><strong>気圧:</strong> <span id="pressure">{{ weather.pressure }} hPa</span></p>
+    <p><strong>雲の量:</strong> <span id="clouds">{{ clouds.all }}%</span></p>
+    <p><strong>天気:</strong> <span id="weather_main">{{ weather_main }}</span></p>
+    <p><strong>詳細:</strong> <span id="weather_description">{{ weather_description }}</span></p>
+    <p><strong>風速:</strong> <span id="wind_speed">{{ wind.speed }} m/s</span></p>
+    <p><strong>風向:</strong> <span id="wind_deg">{{ wind.deg }} 度</span></p>
+    <!-- <p><strong>IP:</strong> {{ ip }} </p> -->
+    <p id="rain" style="display: none;"><strong>降雨量:</strong> <span id="rain_amount"></span></p>
+</body>
+</html>
